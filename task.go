@@ -1,6 +1,8 @@
 package task
 
-import "sync"
+import (
+	"sync"
+)
 
 // Manager contains all the required tools to manage the task.
 type Manager struct {
@@ -9,23 +11,23 @@ type Manager struct {
 
 // NewManager initialize the task manager.
 func NewManager() *Manager {
-	return &Manager{
-		wg: new(sync.WaitGroup),
-	}
+	m := new(Manager)
+	m.init()
+	return m
 }
 
-func (m *Manager) initWg() {
+func (m *Manager) init() {
 	if m.wg == nil {
 		m.wg = new(sync.WaitGroup)
 	}
 }
 
-// AnonymousClosure defines the anonymous function for the Run argument.
-type AnonymousClosure func()
+// ClosureAnonym defines the anonymous function for the Run argument.
+type ClosureAnonym func()
 
 // Run runs the task in a new go function.
-func (m *Manager) Run(fn AnonymousClosure) {
-	m.initWg()
+func (m *Manager) Run(fn ClosureAnonym) {
+	m.init()
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
@@ -33,8 +35,8 @@ func (m *Manager) Run(fn AnonymousClosure) {
 	}()
 }
 
-// Wait blocks the current thread until the wg is zero.
+// Wait blocks the current thread until the wg counter is zero.
 func (m *Manager) Wait() {
-	m.initWg()
+	m.init()
 	m.wg.Wait()
 }
