@@ -7,8 +7,8 @@ type Manager struct {
 	wg *sync.WaitGroup
 }
 
-// New initialize the task manager.
-func New() *Manager {
+// NewManager initialize the task manager.
+func NewManager() *Manager {
 	return &Manager{
 		wg: new(sync.WaitGroup),
 	}

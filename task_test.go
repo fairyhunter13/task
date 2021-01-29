@@ -7,7 +7,7 @@ import (
 )
 
 func TestManager_Success(t *testing.T) {
-	m := New()
+	m := NewManager()
 
 	var test string
 	m.Run(func() {
