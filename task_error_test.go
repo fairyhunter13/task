@@ -8,7 +8,7 @@ import (
 )
 
 func TestErrorManager_Success(t *testing.T) {
-	m := NewErrorManager(5)
+	m := NewErrorManager()
 
 	var test string
 	m.Run(func() error {
@@ -45,8 +45,25 @@ func TestErrorManager_Success(t *testing.T) {
 }
 
 func TestManager_EdgeCases(t *testing.T) {
+	t.Run("No Init", func(*testing.T) {
+		m := new(ErrorManager)
+		m.Error()
+	})
+	t.Run("Single Error Job", func(t *testing.T) {
+		m := NewErrorManager()
+
+		var test string
+		m.Run(func() error {
+			test = "hello"
+			return errors.New("there is an error here")
+		})
+
+		err := m.Error()
+		assert.EqualValues(t, test, "hello")
+		assert.NotNil(t, err)
+	})
 	t.Run("Sending On Closed Channel", func(t *testing.T) {
-		m := NewErrorManager(1)
+		m := NewErrorManager()
 
 		var test string
 		m.Run(func() error {
@@ -61,10 +78,39 @@ func TestManager_EdgeCases(t *testing.T) {
 
 		err := m.Error()
 		assert.EqualValues(t, test, "hello")
-		assert.EqualValues(t, test2, "")
+		assert.EqualValues(t, test2, "hi")
 		assert.NotNil(t, err)
 	})
-	t.Run("Buffer Size 0", func(t *testing.T) {
+	t.Run("Call Error Early", func(t *testing.T) {
+		m := NewErrorManager()
+		m.Error()
+		m.ErrChan()
 
+		var test string
+		m.Run(func() error {
+			test = "hello"
+			return errors.New("there is an error here")
+		})
+		var test2 string
+		m.Run(func() error {
+			test2 = "hi"
+			return nil
+		})
+		var test3 string
+		m.Run(func() error {
+			test3 = "hola"
+			return nil
+		})
+		var test4 string
+		m.Run(func() error {
+			test4 = "ohayou"
+			return nil
+		})
+		err := m.Error()
+		assert.EqualValues(t, test, "hello")
+		assert.EqualValues(t, test2, "hi")
+		assert.EqualValues(t, test3, "hola")
+		assert.EqualValues(t, test4, "ohayou")
+		assert.NotNil(t, err)
 	})
 }
