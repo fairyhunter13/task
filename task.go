@@ -27,6 +27,9 @@ type ClosureAnonym func()
 
 // Run runs the task in a new go function.
 func (m *Manager) Run(fn ClosureAnonym) {
+	if fn == nil {
+		return
+	}
 	m.init()
 	m.wg.Add(1)
 	go func() {

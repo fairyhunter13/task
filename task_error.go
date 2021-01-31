@@ -39,6 +39,9 @@ type ClosureErr func() (err error)
 
 // Run runs the closure error function.
 func (em *ErrorManager) Run(fn ClosureErr) {
+	if fn == nil {
+		return
+	}
 	em.init()
 	atomic.AddUint64(&em.counter, 1)
 	go func() {
