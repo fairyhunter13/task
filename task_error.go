@@ -1,7 +1,10 @@
 package task
 
 import (
+	"sync"
 	"sync/atomic"
+
+	"github.com/panjf2000/ants"
 )
 
 const (
@@ -13,7 +16,7 @@ const (
 type ErrorManager struct {
 	chErr    chan error
 	isClosed uint64
-	counter  uint64
+	wg       *sync.WaitGroup
 }
 
 // NewErrorManager initialize the new error manager.
@@ -27,6 +30,9 @@ func (em *ErrorManager) init() {
 	if em.chErr == nil || em.isChannelClosed() {
 		em.chErr = make(chan error)
 		atomic.StoreUint64(&em.isClosed, channelOpen)
+	}
+	if em.wg == nil {
+		em.wg = new(sync.WaitGroup)
 	}
 }
 
@@ -43,10 +49,11 @@ func (em *ErrorManager) Run(fn ClosureErr) {
 		return
 	}
 	em.init()
-	atomic.AddUint64(&em.counter, 1)
-	go func() {
+	em.wg.Add(1)
+	ants.Submit(func() {
+		defer em.wg.Done()
 		em.chErr <- fn()
-	}()
+	})
 }
 
 // ErrChan returns the receiving error channel of this error manager.
@@ -55,35 +62,27 @@ func (em *ErrorManager) ErrChan() <-chan error {
 	return em.chErr
 }
 
-// Error returns the first error from the Run execution of the fn closure.
-func (em *ErrorManager) Error() (err error) {
+// WaitClose wait all go routines to complete and close the channel in the separate go routine.
+func (em *ErrorManager) WaitClose() {
 	em.init()
-	defer em.close()
-
-	if em.isJobDone() {
-		return
-	}
-
-	for {
-		errTemp, more := <-em.chErr
-		atomic.AddUint64(&em.counter, ^uint64(0))
-		if !more {
-			break
-		}
-
-		if err == nil {
-			err = errTemp
-		}
-
-		if em.isJobDone() {
-			break
-		}
-	}
-	return
+	ants.Submit(func() {
+		em.wg.Wait()
+		em.close()
+	})
 }
 
-func (em *ErrorManager) isJobDone() bool {
-	return atomic.LoadUint64(&em.counter) == 0
+// Error returns the first error from the Run execution of the fn closure.
+func (em *ErrorManager) Error() (err error) {
+	em.WaitClose()
+
+	for errTemp := range em.chErr {
+		if err != nil {
+			continue
+		}
+
+		err = errTemp
+	}
+	return
 }
 
 func (em *ErrorManager) close() {

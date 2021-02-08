@@ -17,6 +17,7 @@ func TestManager_Success(t *testing.T) {
 	m.Run(func() {
 		test2 = "hi"
 	})
+	m.Run(nil)
 
 	m.Wait()
 

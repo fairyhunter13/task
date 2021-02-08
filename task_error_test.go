@@ -75,6 +75,7 @@ func TestManager_EdgeCases(t *testing.T) {
 			test2 = "hi"
 			return errors.New("there is an error here")
 		})
+		m.Run(nil)
 
 		err := m.Error()
 		assert.EqualValues(t, test, "hello")
@@ -112,5 +113,40 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.EqualValues(t, test3, "hola")
 		assert.EqualValues(t, test4, "ohayou")
 		assert.NotNil(t, err)
+	})
+	t.Run("Using manual error channel", func(t *testing.T) {
+		m := NewErrorManager()
+		chanErr := m.ErrChan()
+
+		var test string
+		m.Run(func() error {
+			test = "hello"
+			return nil
+		})
+		var test2 string
+		m.Run(func() error {
+			test2 = "hi"
+			return nil
+		})
+		var test3 string
+		m.Run(func() error {
+			test3 = "hola"
+			return nil
+		})
+		var test4 string
+		m.Run(func() error {
+			test4 = "ohayou"
+			return nil
+		})
+
+		m.WaitClose()
+		for errTemp := range chanErr {
+			assert.Nil(t, errTemp)
+		}
+
+		assert.EqualValues(t, test, "hello")
+		assert.EqualValues(t, test2, "hi")
+		assert.EqualValues(t, test3, "hola")
+		assert.EqualValues(t, test4, "ohayou")
 	})
 }

@@ -2,6 +2,8 @@ package task
 
 import (
 	"sync"
+
+	"github.com/panjf2000/ants"
 )
 
 // Manager contains all the required tools to manage the task.
@@ -25,17 +27,17 @@ func (m *Manager) init() {
 // ClosureAnonym defines the anonymous function for the Run argument.
 type ClosureAnonym func()
 
-// Run runs the task in a new go function.
+// Run runs the task in a separate go function.
 func (m *Manager) Run(fn ClosureAnonym) {
 	if fn == nil {
 		return
 	}
 	m.init()
 	m.wg.Add(1)
-	go func() {
+	ants.Submit(func() {
 		defer m.wg.Done()
 		fn()
-	}()
+	})
 }
 
 // Wait blocks the current thread until the wg counter is zero.
