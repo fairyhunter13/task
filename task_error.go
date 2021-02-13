@@ -10,25 +10,33 @@ import (
 const (
 	channelClosed uint64 = 1
 	channelOpen   uint64 = 0
+	// DefaultBufferSize specifies the default size of channel.
+	DefaultBufferSize = 5
 )
 
 // ErrorManager contains Manager but especially for error function.
 type ErrorManager struct {
 	chErr    chan error
 	isClosed uint64
+	bufSize  int
 	wg       *sync.WaitGroup
 }
 
 // NewErrorManager initialize the new error manager.
-func NewErrorManager() *ErrorManager {
-	em := new(ErrorManager)
+func NewErrorManager(bufSize int) *ErrorManager {
+	em := &ErrorManager{
+		bufSize: bufSize,
+	}
 	em.init()
 	return em
 }
 
 func (em *ErrorManager) init() {
+	if em.bufSize < 1 {
+		em.bufSize = DefaultBufferSize
+	}
 	if em.chErr == nil || em.isChannelClosed() {
-		em.chErr = make(chan error)
+		em.chErr = make(chan error, em.bufSize)
 		atomic.StoreUint64(&em.isClosed, channelOpen)
 	}
 	if em.wg == nil {

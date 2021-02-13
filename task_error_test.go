@@ -8,7 +8,7 @@ import (
 )
 
 func TestErrorManager_Success(t *testing.T) {
-	m := NewErrorManager()
+	m := NewErrorManager(0)
 
 	var test string
 	m.Run(func() error {
@@ -50,7 +50,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		m.Error()
 	})
 	t.Run("Single Error Job", func(t *testing.T) {
-		m := NewErrorManager()
+		m := NewErrorManager(0)
 
 		var test string
 		m.Run(func() error {
@@ -63,7 +63,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Sending On Closed Channel", func(t *testing.T) {
-		m := NewErrorManager()
+		m := NewErrorManager(0)
 
 		var test string
 		m.Run(func() error {
@@ -83,7 +83,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Call Error Early", func(t *testing.T) {
-		m := NewErrorManager()
+		m := NewErrorManager(0)
 		m.Error()
 		m.ErrChan()
 
@@ -115,7 +115,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Using manual error channel", func(t *testing.T) {
-		m := NewErrorManager()
+		m := NewErrorManager(0)
 		chanErr := m.ErrChan()
 
 		var test string
