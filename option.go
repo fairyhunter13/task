@@ -9,6 +9,7 @@ type Option struct {
 	UsePanicHandler bool
 }
 
+// Assign assign the functional options list to the Option.
 func (o *Option) Assign(opts ...OptionFunc) *Option {
 	for _, opt := range opts {
 		opt(o)
