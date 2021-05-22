@@ -28,16 +28,30 @@ func (m *Manager) init() {
 type ClosureAnonym func()
 
 // Run runs the task in a separate go function.
-func (m *Manager) Run(fn ClosureAnonym) {
+func (m *Manager) Run(fn ClosureAnonym, opts ...OptionFunc) {
 	if fn == nil {
 		return
 	}
+
 	m.init()
+	opt := new(Option).Assign(opts...)
 	m.wg.Add(1)
-	ants.Submit(func() {
+	_ = ants.Submit(func() {
 		defer m.wg.Done()
-		fn()
+
+		if opt.UsePanicHandler {
+			m.recoverPanic(fn)
+		} else {
+			fn()
+		}
 	})
+}
+
+func (m *Manager) recoverPanic(fn ClosureAnonym) {
+	defer func() {
+		_ = recover()
+	}()
+	fn()
 }
 
 // Wait blocks the current thread until the wg counter is zero.

@@ -56,3 +56,23 @@ func TestManager_NoInit(t *testing.T) {
 	assert.EqualValues(t, test, "hello")
 	assert.EqualValues(t, test2, "hi")
 }
+
+func TestManager_Panic(t *testing.T) {
+	m := NewManager()
+
+	var test string
+	m.Run(func() {
+		test = "hello"
+		panic("hello")
+	}, WithPanicHandler(true))
+	var test2 string
+	m.Run(func() {
+		test2 = "hi"
+	})
+	m.Run(nil)
+
+	m.Wait()
+
+	assert.EqualValues(t, test, "hello")
+	assert.EqualValues(t, test2, "hi")
+}

@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -52,16 +53,38 @@ func (em *ErrorManager) isChannelClosed() bool {
 type ClosureErr func() (err error)
 
 // Run runs the closure error function.
-func (em *ErrorManager) Run(fn ClosureErr) {
+func (em *ErrorManager) Run(fn ClosureErr, opts ...OptionFunc) {
 	if fn == nil {
 		return
 	}
+
 	em.init()
+	opt := new(Option).Assign(opts...)
 	em.wg.Add(1)
-	ants.Submit(func() {
+	_ = ants.Submit(func() {
 		defer em.wg.Done()
-		em.chErr <- fn()
+
+		if opt.UsePanicHandler {
+			em.chErr <- em.recoverPanic(fn)
+		} else {
+			em.chErr <- fn()
+		}
 	})
+}
+
+func (em *ErrorManager) recoverPanic(fn ClosureErr) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			switch valRec := rec.(type) {
+			case error:
+				err = valRec
+			default:
+				err = fmt.Errorf("%v", valRec)
+			}
+		}
+	}()
+	err = fn()
+	return
 }
 
 // ErrChan returns the receiving error channel of this error manager.
@@ -73,7 +96,7 @@ func (em *ErrorManager) ErrChan() <-chan error {
 // WaitClose wait all go routines to complete and close the channel in the separate go routine.
 func (em *ErrorManager) WaitClose() {
 	em.init()
-	ants.Submit(func() {
+	_ = ants.Submit(func() {
 		em.wg.Wait()
 		em.close()
 	})

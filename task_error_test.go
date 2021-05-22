@@ -47,7 +47,7 @@ func TestErrorManager_Success(t *testing.T) {
 func TestManager_EdgeCases(t *testing.T) {
 	t.Run("No Init", func(*testing.T) {
 		m := new(ErrorManager)
-		m.Error()
+		_ = m.Error()
 	})
 	t.Run("Single Error Job", func(t *testing.T) {
 		m := NewErrorManager(0)
@@ -84,7 +84,7 @@ func TestManager_EdgeCases(t *testing.T) {
 	})
 	t.Run("Call Error Early", func(t *testing.T) {
 		m := NewErrorManager(0)
-		m.Error()
+		_ = m.Error()
 		m.ErrChan()
 
 		var test string
@@ -149,4 +149,38 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.EqualValues(t, test3, "hola")
 		assert.EqualValues(t, test4, "ohayou")
 	})
+}
+
+func TestErrorManager_Panic(t *testing.T) {
+	m := NewErrorManager(0)
+
+	var test string
+	m.Run(func() error {
+		test = "hello"
+		panic("hello")
+	}, WithPanicHandler(true))
+	var test2 string
+	m.Run(func() error {
+		test2 = "hi"
+		return nil
+	})
+
+	err := m.Error()
+	assert.EqualValues(t, test, "hello")
+	assert.EqualValues(t, test2, "hi")
+	assert.NotNil(t, err)
+
+	m.Run(func() error {
+		test = "hello again"
+		panic(errors.New("hello"))
+	}, WithPanicHandler(true))
+	m.Run(func() error {
+		test2 = "hi again"
+		return nil
+	})
+
+	err = m.Error()
+	assert.EqualValues(t, test, "hello again")
+	assert.EqualValues(t, test2, "hi again")
+	assert.NotNil(t, err)
 }
