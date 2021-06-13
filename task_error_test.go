@@ -8,7 +8,7 @@ import (
 )
 
 func TestErrorManager_Success(t *testing.T) {
-	m := NewErrorManager(0)
+	m := NewErrorManager()
 
 	var test string
 	m.Run(func() error {
@@ -50,7 +50,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		_ = m.Error()
 	})
 	t.Run("Single Error Job", func(t *testing.T) {
-		m := NewErrorManager(0)
+		m := NewErrorManager()
 
 		var test string
 		m.Run(func() error {
@@ -63,7 +63,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Sending On Closed Channel", func(t *testing.T) {
-		m := NewErrorManager(0)
+		m := NewErrorManager()
 
 		var test string
 		m.Run(func() error {
@@ -83,7 +83,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Call Error Early", func(t *testing.T) {
-		m := NewErrorManager(0)
+		m := NewErrorManager()
 		_ = m.Error()
 		m.ErrChan()
 
@@ -115,7 +115,7 @@ func TestManager_EdgeCases(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("Using manual error channel", func(t *testing.T) {
-		m := NewErrorManager(0)
+		m := NewErrorManager()
 		chanErr := m.ErrChan()
 
 		var test string
@@ -152,15 +152,15 @@ func TestManager_EdgeCases(t *testing.T) {
 }
 
 func TestErrorManager_Panic(t *testing.T) {
-	m := NewErrorManager(0)
+	m := NewErrorManager(WithBufferSize(5), WithPanicHandler(true))
 
 	var test string
 	m.Run(func() error {
 		test = "hello"
 		panic("hello")
-	}, WithPanicHandler(true))
+	})
 	var test2 string
-	m.Run(func() error {
+	m.Assign(WithPanicHandler(false)).Run(func() error {
 		test2 = "hi"
 		return nil
 	})
@@ -170,10 +170,10 @@ func TestErrorManager_Panic(t *testing.T) {
 	assert.EqualValues(t, test2, "hi")
 	assert.NotNil(t, err)
 
-	m.Run(func() error {
+	m.Assign(WithPanicHandler(true)).Run(func() error {
 		test = "hello again"
 		panic(errors.New("hello"))
-	}, WithPanicHandler(true))
+	}).Assign(WithPanicHandler(false))
 	m.Run(func() error {
 		test2 = "hi again"
 		return nil

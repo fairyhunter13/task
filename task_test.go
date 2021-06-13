@@ -58,13 +58,13 @@ func TestManager_NoInit(t *testing.T) {
 }
 
 func TestManager_Panic(t *testing.T) {
-	m := NewManager()
+	m := NewManager(WithPanicHandler(true))
 
 	var test string
 	m.Run(func() {
 		test = "hello"
 		panic("hello")
-	}, WithPanicHandler(true))
+	}).Assign(WithPanicHandler(false))
 	var test2 string
 	m.Run(func() {
 		test2 = "hi"

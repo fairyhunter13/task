@@ -1,4 +1,4 @@
-module github.com/fairyhunter13/task
+module github.com/fairyhunter13/task/v2
 
 go 1.15
 
