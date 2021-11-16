@@ -3,7 +3,7 @@ package task
 import (
 	"sync"
 
-	"github.com/panjf2000/ants"
+	"github.com/panjf2000/ants/v2"
 )
 
 // Manager contains all the required tools to manage the task.
